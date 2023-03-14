@@ -1,0 +1,26 @@
+{
+  "steps": [
+    {
+      "name": "gcr.io/cloud-builders/docker",
+      "entrypoint": "bash",
+      "args": ["-c", "docker pull gcr.io/cloud-builders/docker || exit 0"]
+    },
+    {
+      "name": "gcr.io/cloud-builders/docker",
+      "args": [
+        "build",
+        "-t",
+        "gcr.io/tripleearplatform/arize-gltf-to-usdz",
+        "--cache-from",
+        "gcr.io/tripleearplatform/arize-gltf-to-usdz",
+        "."
+      ]
+    },
+    {
+      "name": "gcr.io/cloud-builders/docker",
+      "args": ["push", "gcr.io/tripleearplatform/arize-gltf-to-usdz"]
+    }
+  ],
+  "timeout": "25000s",
+  "images": ["gcr.io/tripleearplatform/arize-gltf-to-usdz"]
+}
