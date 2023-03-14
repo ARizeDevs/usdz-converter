@@ -5,12 +5,14 @@
   "main": "index.js",
   "scripts": {
     "start": "node ./src/index.js",
+    "debug": "nodemon --inspect ./src/index.js 8080",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
-    "multer": "^1.4.2"
+    "multer": "^1.4.2",
+    "nodemon": "^2.0.21"
   },
   "repository": {
     "type": "git",

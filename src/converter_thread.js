@@ -32,7 +32,7 @@ function convertFile(filepath) {
   console.log(filename, dirname, tmpFolder);
   return new Promise((resolve, reject) => {
     exec(
-      `usd_from_gltf ${filepath} /usr/src/app/tmp/${tmpFolder}/${filename}.usdz && mv /usr/src/app/tmp/${tmpFolder}/${filename}.usdz ${dirname} && rmdir /usr/src/app/tmp/${tmpFolder}`,
+      `usd_from_gltf /usr/src/app/uploads/${filepath} /usr/src/app/tmp/${tmpFolder}/${filename}.usdz && mv /usr/src/app/tmp/${tmpFolder}/${filename}.usdz /usr/src/app/uploads/ && rmdir /usr/src/app/tmp/${tmpFolder}`,
       (error, stdout, stderr) => {
         if (error) {
           reject(error.message);

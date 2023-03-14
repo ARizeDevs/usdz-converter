@@ -47,7 +47,7 @@ const { isMainThread, Worker } = require('worker_threads');
 
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, './uploads');
+    cb(null, 'uploads');
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
@@ -65,9 +65,7 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.post('', upload.single('gltf'), function (req, res, next) {
-  const filename = req.body.filename;
-
-  console.log(filename);
+  const filename = req.file.filename;
 
   if (filename == null) {
     res.send({ error: 'No filename defined in the request' });
@@ -92,26 +90,11 @@ app.post('', upload.single('gltf'), function (req, res, next) {
       }
     });
   }
-
-  // axios
-  //   .post('http://gltf-to-usdz-service:3000/local-convert', {
-  //     filename: req.file.filename,
-  //   })
-  //   .then((result) => {
-  //     console.log(result.data);
-  //     res.send(result.data);
-  //   })
-  //   .catch((error) => {
-  //     res.send({
-  //       success: false,
-  //       error: 'Error while connecting to gltf-to-usdz-service',
-  //     });
-  //   });
 });
 
 app.get('', function (req, res, next) {
   var filename = req.query.file;
-  const file = `${__dirname}/uploads/${filename}`;
+  const file = `/usr/src/app/uploads/${filename}`;
   res.download(file);
 });
 
