@@ -34,14 +34,14 @@ function convertFile(filepath) {
     exec(
       `usd_from_gltf /usr/src/app/uploads/${filepath} /usr/src/app/tmp/${tmpFolder}/${filename}.usdz && mv /usr/src/app/tmp/${tmpFolder}/${filename}.usdz /usr/src/app/uploads/ && rmdir /usr/src/app/tmp/${tmpFolder}`,
       (error, stdout, stderr) => {
-        if (error) {
-          reject(error.message);
-          return;
-        }
-        if (stderr) {
-          reject(stderr);
-          return;
-        }
+        // if (error) {
+        //   reject(error.message);
+        //   return;
+        // }
+        // if (stderr) {
+        //   reject(stderr);
+        //   return;
+        // }
         resolve(`${filename}.usdz`);
       }
     );

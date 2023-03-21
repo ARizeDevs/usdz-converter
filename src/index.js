@@ -44,6 +44,7 @@ const path = require('path');
 const multer = require('multer');
 const bodyParser = require('body-parser');
 const { isMainThread, Worker } = require('worker_threads');
+const cors = require('cors')
 
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -61,6 +62,7 @@ var storage = multer.diskStorage({
 var upload = multer({ storage: storage });
 
 app.use(bodyParser.json());
+app.use(cors())
 
 app.use(express.static(path.join(__dirname, 'public')));
 
