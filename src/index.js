@@ -38,20 +38,22 @@
 //   console.log(`USDZ Converter Server running at http://localhost:${port}`);
 // });
 
-const express = require('express');
+const express = require("express");
 const app = express();
-const path = require('path');
-const multer = require('multer');
-const bodyParser = require('body-parser');
-const { isMainThread, Worker } = require('worker_threads');
-const cors = require('cors')
+const path = require("path");
+const multer = require("multer");
+const bodyParser = require("body-parser");
+const { isMainThread, Worker } = require("worker_threads");
+const cors = require("cors");
+const fs = require("fs");
+const https = require("https");
 
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads');
+    cb(null, "uploads");
   },
   filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(
       null,
       `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`
@@ -62,42 +64,88 @@ var storage = multer.diskStorage({
 var upload = multer({ storage: storage });
 
 app.use(bodyParser.json());
-app.use(cors())
+app.use(cors());
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 
-app.post('', upload.single('gltf'), function (req, res, next) {
+app.post("", upload.single("gltf"), function (req, res, next) {
   const filename = req.file.filename;
 
   if (filename == null) {
-    res.send({ error: 'No filename defined in the request' });
+    res.send({ error: "No filename defined in the request" });
     return;
   }
   if (isMainThread) {
-    let thread = new Worker(path.resolve(__dirname, 'converter_thread.js'), {
+    let thread = new Worker(path.resolve(__dirname, "converter_thread.js"), {
       workerData: { filename: filename },
     });
 
-    thread.on('message', (data) => {
+    thread.on("message", (data) => {
       res.send(data);
     });
 
-    thread.on('error', (err) => {
+    thread.on("error", (err) => {
       res.send({ success: false, error: err });
     });
 
-    thread.on('exit', (code) => {
+    thread.on("exit", (code) => {
       if (code != 0) {
-        console.log('Worker Thread exited with code: ' + code);
+        console.log("Worker Thread exited with code: " + code);
       }
     });
   }
 });
 
-app.get('', function (req, res, next) {
+app.get("", function (req, res, next) {
   var filename = req.query.file;
   const file = `/usr/src/app/uploads/${filename}`;
   res.download(file);
 });
 
-app.listen(8080, () => console.log('Listening on port 8080'));
+app.get('/download', (req, res) => {
+  const fileUrl = req.query.fileUrl; // Get the file URL from the query params
+
+  https.get(fileUrl, (response) => {
+    let fileBuffer = Buffer.from([]);
+
+    response.on('data', (chunk) => {
+      fileBuffer = Buffer.concat([fileBuffer, chunk]);
+    });
+
+    response.on('end', () => {
+      res.setHeader('Content-disposition', `attachment; filename=${fileUrl}`);
+      res.send(fileBuffer);
+    });
+  }).on('error', (error) => {
+    console.error(`Error downloading file: ${error}`);
+    res.status(500).send('Error downloading file');
+  });
+});
+
+// app.get("/download", (req, res) => {
+//   const fileUrl = req.query.fileUrl; // Get the file URL from the query params
+//   const filename = path.basename(fileUrl);
+//   const filePath = path.join(__dirname, "src", "fetched-files", filename);
+//   const file = fs.createWriteStream(filePath);
+
+//   https
+//     .get(fileUrl, (response) => {
+//       response.pipe(file);
+
+//       file.on("finish", () => {
+//         file.close(() => {
+//           res.setHeader(
+//             "Content-disposition",
+//             `attachment; filename=${filename}`
+//           );
+//           res.sendFile(filePath);
+//         });
+//       });
+//     })
+//     .on("error", (error) => {
+//       console.error(`Error downloading file: ${error}`);
+//       res.status(500).send("Error downloading file");
+//     });
+// });
+
+app.listen(8080, () => console.log("Listening on port 8080"));

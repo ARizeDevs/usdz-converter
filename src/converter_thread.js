@@ -1,10 +1,10 @@
-const { exec } = require('child_process');
-const { workerData, parentPort } = require('worker_threads');
-const path = require('path');
+const { exec } = require("child_process");
+const { workerData, parentPort } = require("worker_threads");
+const path = require("path");
 
 convertFile(workerData.filename)
-  .then((outputPath) => {
-    parentPort.postMessage({ success: true, outputPath: outputPath });
+  .then((outputPaths) => {
+    parentPort.postMessage({ success: true, outputPaths });
   })
   .catch((error) => {
     parentPort.postMessage({ success: false, error: error });
@@ -42,7 +42,10 @@ function convertFile(filepath) {
         //   reject(stderr);
         //   return;
         // }
-        resolve(`${filename}.usdz`);
+        resolve({
+          usdz : `${filename}.usdz`,
+          glb : `${filepath}`
+        });
       }
     );
   });
@@ -51,6 +54,6 @@ function convertFile(filepath) {
 function randomString() {
   return Math.random()
     .toString(36)
-    .replace(/[^a-z]+/g, '')
+    .replace(/[^a-z]+/g, "")
     .substring(0, 10);
 }
