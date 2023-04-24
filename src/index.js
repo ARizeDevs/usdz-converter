@@ -47,6 +47,8 @@ const { isMainThread, Worker } = require("worker_threads");
 const cors = require("cors");
 const fs = require("fs");
 const https = require("https");
+const typeis = require("type-is");
+const mime = require("mime-types");
 
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -63,7 +65,7 @@ var storage = multer.diskStorage({
 
 var upload = multer({ storage: storage });
 
-app.use(bodyParser.json());
+app.use(express.json({ limit: "20mb" }));
 app.use(cors());
 
 app.use(express.static(path.join(__dirname, "public")));
@@ -102,25 +104,129 @@ app.get("", function (req, res, next) {
   res.download(file);
 });
 
-app.get('/download', (req, res) => {
-  const fileUrl = req.query.fileUrl; // Get the file URL from the query params
-
-  https.get(fileUrl, (response) => {
-    let fileBuffer = Buffer.from([]);
-
-    response.on('data', (chunk) => {
-      fileBuffer = Buffer.concat([fileBuffer, chunk]);
-    });
-
-    response.on('end', () => {
-      res.setHeader('Content-disposition', `attachment; filename=${fileUrl}`);
-      res.send(fileBuffer);
-    });
-  }).on('error', (error) => {
-    console.error(`Error downloading file: ${error}`);
-    res.status(500).send('Error downloading file');
-  });
+app.get("/ai/image", function (req, res, next) {
+  var filename = req.query.file;
+  const file = path.join(__dirname, "ai-images", filename);
+  res.download(file);
 });
+
+// app.get('/download', (req, res) => {
+//   const fileUrl = req.query.fileUrl; // Get the file URL from the query params
+
+//   https.get(fileUrl, (response) => {
+//     let fileBuffer = Buffer.from([]);
+
+//     response.on('data', (chunk) => {
+//       fileBuffer = Buffer.concat([fileBuffer, chunk]);
+//     });
+
+//     response.on('end', () => {
+//       res.setHeader('Content-disposition', `attachment; filename=${fileUrl}`);
+//       res.send(fileBuffer);
+//     });
+//   }).on('error', (error) => {
+//     console.error(`Error downloading file: ${error}`);
+//     res.status(500).send('Error downloading file');
+//   });
+// });
+
+// app.get('/download', (req, res) => {
+//   const fileUrl = req.query.fileUrl; // Get the file URL from the query params
+
+//   https.get(fileUrl, (response) => {
+//     let fileBuffer = Buffer.from([]);
+
+//     response.on('data', (chunk) => {
+//       fileBuffer = Buffer.concat([fileBuffer, chunk]);
+//     });
+
+//     response.on('end', () => {
+//       res.setHeader('Content-disposition', 'attachment; filename=texture.png');
+//       res.send(fileBuffer);
+//     });
+//   }).on('error', (error) => {
+//     console.error(`Error downloading file: ${error}`);
+//     res.status(500).send('Error downloading file');
+//   });
+// });
+// app.post("/image", (req, res) => {
+//    const base64Image = req.body.img;
+
+//   // Decode the Base64 image data
+//   const decodedImage = Buffer.from(base64Image, "base64");
+
+//   // Set the response headers to indicate an image is being returned
+//   res.setHeader("Content-Type", "image/png");
+//   res.setHeader("Content-Disposition", "attachment; filename=image.png");
+
+//   // Send the decoded image data as the response
+//   res.send(decodedImage);
+// });
+
+app.post("/image", (req, res) => {
+  const base64Image = req.body.img;
+
+  // Decode the Base64 image data
+  const decodedImage = Buffer.from(base64Image, "base64");
+
+  const fileName = `${Date.now()}.png`;
+  // Save the decoded image to disk
+  fs.writeFile(
+    path.join(__dirname, "ai-images", fileName),
+    decodedImage,
+    (err) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send("Error saving file");
+        return;
+      }
+
+      // Set the response headers to indicate an image is being returned
+      // res.setHeader("Content-Type", "image/png");
+      // res.setHeader("Content-Disposition", "attachment; filename=image.png");
+
+      // Send the decoded image data as the response
+      res.json({
+        fileUrl: `${req.get("host")}/ai/image?file=${fileName}`,
+      });
+    }
+  );
+});
+
+// app.get("/download", (req, res) => {
+//   const fileUrl = req.query.fileUrl; // Get the file URL from the query params
+
+//   https
+//     .get(fileUrl, (response) => {
+//       let fileBuffer = Buffer.from([]);
+
+//       response.on("data", (chunk) => {
+//         fileBuffer = Buffer.concat([fileBuffer, chunk]);
+//       });
+
+//       response.on("end", () => {
+//         const contentType = response.headers["content-type"];
+//         const mimeType = typeis.is(fileBuffer, [contentType]);
+//         if (!mimeType) {
+//           console.error("Error determining file type");
+//           res.status(500).send("Error determining file type");
+//           return;
+//         }
+
+//         const fileExtension = mime.extension(mimeType);
+//         res.setHeader(
+//           "Content-disposition",
+//           "attachment; filename=file." + fileExtension
+//         );
+//         res.setHeader("Content-type", contentType);
+//         res.send(fileBuffer);
+//       });
+//     })
+//     .on("error", (error) => {
+//       console.error(`Error downloading file: ${error}`);
+//       res.status(500).send("Error downloading file");
+//     });
+// });
 
 // app.get("/download", (req, res) => {
 //   const fileUrl = req.query.fileUrl; // Get the file URL from the query params
