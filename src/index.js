@@ -46,9 +46,11 @@ const bodyParser = require("body-parser");
 const { isMainThread, Worker } = require("worker_threads");
 const cors = require("cors");
 const fs = require("fs");
+const axios = require("axios");
 const https = require("https");
 const typeis = require("type-is");
 const mime = require("mime-types");
+const { v4: uuid } = require("uuid");
 
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -96,6 +98,137 @@ app.post("", upload.single("gltf"), function (req, res, next) {
       }
     });
   }
+});
+
+app.post("/from-url", function (req, res, next) {
+  const { sourceUrl, destSignedUrl } = req.body;
+
+  if (sourceUrl == null) {
+    res.send({ error: "There is no source url" });
+    return;
+  }
+
+  axios
+    .get(sourceUrl, { responseType: "stream" })
+    .then((response) => {
+      console.log("file downloaded successfully, next step: convert it to glb");
+
+      try {
+        const fileId = uuid();
+        const filePath = path.join(
+          __dirname,
+          "..",
+          "uploads",
+          `/${fileId}.glb`
+        );
+        const writer = fs.createWriteStream(filePath);
+
+        response.data.pipe(writer);
+
+        writer.on("finish", () => {
+          if (isMainThread) {
+            try {
+              let thread = new Worker(
+                path.resolve(__dirname, "converter_thread.js"),
+                {
+                  workerData: { filename: filePath },
+                }
+              );
+
+              thread.on("message", (data) => {
+                const { success, error } = data;
+                if (success)
+                  try {
+                    const file = `/usr/src/app/src/${fileId}.usdz`;
+                    if (destSignedUrl) {
+                      try {
+                        const fileData = fs.readFileSync(file);
+                        axios.put(destSignedUrl, fileData);
+                        res.send({ success: true, destSignedUrl });
+                        return;
+                      } catch (error) {
+                        console.log("Upload to signed url failed");
+                        console.log(error);
+                        res.send({
+                          hasError: true,
+                          message: "Upload to signed url failed" + code,
+                          error: error,
+                        });
+                        return;
+                      }
+                    }
+                    res.send({ file, hasError: false });
+                    return;
+                  } catch (error) {
+                    console.log("return file error");
+                    console.log(error);
+                  }
+                else {
+                  console.log(error);
+                  res.send({ error, hasError: true, data });
+                }
+              });
+
+              thread.on("error", (err) => {
+                res.send({
+                  hasError: true,
+                  message: "Thread Has Error",
+                  error: err,
+                });
+              });
+
+              thread.on("exit", (code) => {
+                if (code != 0) {
+                  console.log("Worker Thread exited with code: " + code);
+                  res.send({
+                    hasError: true,
+                    message: "Worker Thread exited with code" + code,
+                    error: error,
+                  });
+                }
+              });
+            } catch (error) {
+              console.log("Error on making thread");
+              console.log(error);
+              res.send({
+                hasError: true,
+                message: "Error on write glb file to disk",
+                error: error,
+              });
+            }
+          }
+        });
+
+        writer.on("error", (err) => {
+          res.send({
+            hasError: true,
+            message: "Error saving file",
+            error: JSON.stringify(err),
+          });
+          console.log(err);
+        });
+      } catch (error) {
+        console.log("Error on write glb file to disk");
+        console.log(error);
+        res.send({
+          hasError: true,
+          message: "Error on write glb file to disk",
+          error: error,
+        });
+        return;
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+      res.send({ hasError: true, message: "Error downloading file", error });
+      return;
+    });
+});
+
+app.get("/status", function (req, res, next) {
+  console.log("status has been called");
+  filePath = path.join(__dirname, `uploads/${uuid()}`);
+  res.send({ hasError: false, status: "OK", filePath });
 });
 
 app.get("", function (req, res, next) {
@@ -254,4 +387,4 @@ app.post("/image", (req, res) => {
 //     });
 // });
 
-app.listen(8080, () => console.log("Listening on port 8080"));
+app.listen(9090, () => console.log("Listening on port 9090"));

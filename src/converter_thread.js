@@ -1,6 +1,7 @@
 const { exec } = require("child_process");
 const { workerData, parentPort } = require("worker_threads");
 const path = require("path");
+const fs = require("fs");
 
 convertFile(workerData.filename)
   .then((outputPaths) => {
@@ -29,23 +30,34 @@ function convertFile(filepath) {
   const dirname = path.dirname(filepath);
   const tmpFolder = randomString();
 
-  console.log(filename, dirname, tmpFolder);
+  try {
+    // Get the file size
+    const stats = fs.statSync(filepath);
+    const fileSizeInBytes = stats.size;
+
+    // Print the file path and its size
+    console.log("File Path: " + filepath);
+    console.log("File Size (in bytes): " + fileSizeInBytes);
+  } catch (error) {
+    console.log(error);
+  }
+
+  console.log("filename: " + filename);
+  console.log("dirname: " + dirname);
+  console.log("tmpFolder:", tmpFolder);
+
   return new Promise((resolve, reject) => {
     exec(
-      `usd_from_gltf /usr/src/app/uploads/${filepath} /usr/src/app/tmp/${tmpFolder}/${filename}.usdz && mv /usr/src/app/tmp/${tmpFolder}/${filename}.usdz /usr/src/app/uploads/ && rmdir /usr/src/app/tmp/${tmpFolder}`,
+      `usd_from_gltf ${filepath} ${dirname}/${filename}.usdz`,
       (error, stdout, stderr) => {
-        // if (error) {
-        //   reject(error.message);
-        //   return;
-        // }
-        // if (stderr) {
-        //   reject(stderr);
-        //   return;
-        // }
-        resolve({
-          usdz : `${filename}.usdz`,
-          glb : `${filepath}`
-        });
+        if (error) reject(error);
+        else if (stdout) reject(stdout);
+        else if (stderr) reject(stderr);
+        else
+          resolve({
+            usdz: `${filename}.usdz`,
+            glb: `${filepath}`,
+          });
       }
     );
   });
