@@ -138,7 +138,18 @@ app.post("/from-url", function (req, res, next) {
                     if (destSignedUrl) {
                       try {
                         const fileData = fs.readFileSync(file);
-                        axios.put(destSignedUrl, fileData);
+                        axios.put(destSignedUrl, fileData, {
+                          headers: {
+                            "Content-Type": `model/vnd.usdz+zip`,
+                          },
+                          maxBodyLength: Infinity,
+                          onUploadProgress: (progressEvent) => {
+                            const progress =
+                              (progressEvent.loaded / progressEvent.total) *
+                              100;
+                            console.log(progress.toFixed(0));
+                          },
+                        });
                         res.send({ success: true, destSignedUrl });
                         return;
                       } catch (error) {
