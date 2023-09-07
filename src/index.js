@@ -130,7 +130,7 @@ app.post("/from-url", function (req, res, next) {
                 }
               );
 
-              thread.on("message", (data) => {
+              thread.on("message", async (data) => {
                 const { success, error } = data;
                 if (success)
                   try {
@@ -138,7 +138,7 @@ app.post("/from-url", function (req, res, next) {
                     if (destSignedUrl) {
                       try {
                         const fileData = fs.readFileSync(file);
-                        axios.put(destSignedUrl, fileData, {
+                        await axios.put(destSignedUrl, fileData, {
                           headers: {
                             "Content-Type": `model/vnd.usdz+zip`,
                           },
