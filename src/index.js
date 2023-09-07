@@ -183,7 +183,6 @@ app.post("/from-url", function (req, res, next) {
                   res.send({
                     hasError: true,
                     message: "Worker Thread exited with code" + code,
-                    error: error,
                   });
                 }
               });
