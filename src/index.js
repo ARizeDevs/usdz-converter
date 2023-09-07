@@ -115,12 +115,7 @@ app.post("/from-url", function (req, res, next) {
 
       try {
         const fileId = uuid();
-        const filePath = path.join(
-          __dirname,
-          "..",
-          "uploads",
-          `/${fileId}.glb`
-        );
+        const filePath = path.join(__dirname, `/${fileId}.glb`);
         const writer = fs.createWriteStream(filePath);
 
         response.data.pipe(writer);
@@ -139,7 +134,7 @@ app.post("/from-url", function (req, res, next) {
                 const { success, error } = data;
                 if (success)
                   try {
-                    const file = `/usr/src/app/src/${fileId}.usdz`;
+                    const file = path.join(__dirname, `/${fileId}.usdz`);
                     if (destSignedUrl) {
                       try {
                         const fileData = fs.readFileSync(file);
