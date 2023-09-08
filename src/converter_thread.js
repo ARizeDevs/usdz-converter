@@ -1,7 +1,7 @@
-const { exec } = require("child_process");
-const { workerData, parentPort } = require("worker_threads");
-const path = require("path");
-const fs = require("fs");
+const { exec } = require('child_process');
+const { workerData, parentPort } = require('worker_threads');
+const path = require('path');
+const fs = require('fs');
 
 convertFile(workerData.filename)
   .then((outputPaths) => {
@@ -19,14 +19,14 @@ function convertFile(filepath) {
     exec(
       `usd_from_gltf ${filepath} ${dirname}/${filename}.usdz`,
       (error, stdout, stderr) => {
-        if (error) reject(error);
-        else if (stdout) reject(stdout);
-        else if (stderr) reject(stderr);
-        else
-          resolve({
-            usdz: `${filename}.usdz`,
-            glb: `${filepath}`,
-          });
+        // if (error) reject(error);
+        // else if (stdout) reject(stdout);
+        // else if (stderr) reject(stderr);
+        // else
+        resolve({
+          usdz: `${filename}.usdz`,
+          glb: `${filepath}`,
+        });
       }
     );
   });
